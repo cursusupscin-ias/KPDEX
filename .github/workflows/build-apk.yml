@@ -1,59 +1,20 @@
-name: Build KP DEX APK
-
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'index.html'
-      - 'assets/**'
-      - '.github/workflows/build-apk.yml'
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Prepare Capacitor
-        run: |
-          npm init -y
-          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
-          mkdir -p www
-          cp index.html www/index.html
-
-          if [ -d assets ]; then
-            cp -R assets www/assets
-          fi
-
-      - name: Configure KP DEX
-        run: |
-          cat > capacitor.config.json <<'EOF'
-          {
-            "appId": "com.cursusupscin.kpdex",
-            "appName": "KP DEX",
-            "webDir": "www"
-          }
-          EOF
-
       - name: Create Android project
         run: |
           npx cap add android
+
+          copy_icon() {
+            density="$1"
+            source_density="$2"
+            cp "assets/android-icons/ic_launcher_${source_density}.png" \
+              "android/app/src/main/res/mipmap-${density}/ic_launcher.png"
+          }
+
+          copy_icon mdpi mdpi
+          copy_icon hdpi hdpi
+          copy_icon xhdpi xhdpi
+          copy_icon xxhdpi xxhdpi
+          copy_icon xxxhdpi xxxhdpi
+
           npx cap sync android
 
       - name: Build APK
