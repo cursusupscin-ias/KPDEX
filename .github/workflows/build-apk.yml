@@ -34,12 +34,16 @@ jobs:
         run: |
           npm init -y
           npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          npm install --save-dev @capacitor/assets
+
           mkdir -p www
           cp index.html www/index.html
 
           if [ -d assets ]; then
             cp -R assets www/assets
           fi
+
+          cp assets/icon.png assets/icon-only.png
 
       - name: Configure KP DEX
         run: |
@@ -51,43 +55,18 @@ jobs:
           }
           EOF
 
-      - name: Create Android project
+      - name: Generate Android launcher icons
         run: |
           npx cap add android
-
-          RES="android/app/src/main/res"
-
-          copy_icon() {
-            density="$1"
-            source_density="$2"
-            source="assets/android-icons/ic_launcher_${source_density}.png"
-            target="$RES/mipmap-${density}/ic_launcher.png"
-
-            if [ ! -f "$source" ]; then
-              echo "Missing launcher icon: $source"
-              exit 1
-            fi
-
-            mkdir -p "$RES/mipmap-${density}"
-            cp "$source" "$target"
-          }
-
-          copy_icon mdpi mdpi
-          copy_icon hdpi hdpi
-          copy_icon xhdpi xhdpi
-          copy_icon xxhdpi xxhdpi
-          copy_icon xxxhdpi xxxhdpi
-
+          npx capacitor-assets generate --android
           npx cap sync android
 
-      - name: Verify launcher icons
+      - name: Verify launcher resources
         run: |
           set -e
-          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            file="android/app/src/main/res/mipmap-${density}/ic_launcher.png"
-            test -s "$file"
-            echo "Verified $file"
-          done
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          echo "Android adaptive launcher icon resources verified."
 
       - name: Build APK
         run: |
