@@ -5,7 +5,11 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'assets/**'
       - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -33,17 +37,17 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
 
+          if [ -d assets ]; then
+            cp -R assets www/assets
+          fi
+
       - name: Configure KP DEX
         run: |
           cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.cursusupscin.kpdex",
             "appName": "KP DEX",
-            "webDir": "www",
-            "server": {
-              "url": "https://cursusupscin-ias.github.io/KPDEX/",
-              "cleartext": false
-            }
+            "webDir": "www"
           }
           EOF
 
